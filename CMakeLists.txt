@@ -210,6 +210,7 @@ export(EXPORT uvwConfig)
 
 ### Testing
 
+include_directories(/home/runner/work/Astron/Astron/libraries/libuv/include)
 option(UVW_BUILD_TESTING "Enable testing with ctest." OFF)
 
 if(UVW_BUILD_TESTING)

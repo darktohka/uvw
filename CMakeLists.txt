@@ -37,7 +37,6 @@ option(UVW_USE_UBSAN "Use address sanitizer by adding -fsanitize=undefined -fno-
 option(UVW_USE_CLANG_TIDY "Enable static analysis with clang-tidy" OFF)
 option(UVW_BUILD_LIBS "Prepare targets for static library rather than for a header-only library." OFF)
 option(UVW_BUILD_SHARED_LIB "Prepare targets for shared library rather than for a header-only library." OFF)
-option(UVW_FIND_LIBUV "Try finding libuv library development files in the system" OFF)
 
 if(UVW_BUILD_SHARED_LIB)
     set(UVW_BUILD_LIBS BOOL:ON)
@@ -79,13 +78,12 @@ endif()
 set(UVW_LIBUV_VERSION 1.49.0)
 
 function(fetch_libuv)
-    if (UVW_FETCH_LIBUV)
-        include(FetchContent)
+    include(FetchContent)
 
         FetchContent_Declare(
             libuv
             GIT_REPOSITORY https://github.com/libuv/libuv.git
-            GIT_TAG "v${UVW_LIBUV_VERSION}"
+            GIT_TAG "v1.x"
             GIT_SHALLOW 1
         )
 
@@ -103,30 +101,9 @@ function(fetch_libuv)
             add_library(uv::uv-static ALIAS uv_a)
             set_target_properties(uv_a PROPERTIES POSITION_INDEPENDENT_CODE 1)
         endif()
-    endif(UVW_FETCH_LIBUV)
 endfunction()
 
 function(use_libuv)
-    set(UVW_FETCH_LIBUV_DEFAULT ON)
-
-    if (UVW_FIND_LIBUV)
-        find_package(PkgConfig QUIET)
-        if (PkgConfig_FOUND)
-            pkg_check_modules(libuv IMPORTED_TARGET libuv>=${LIBUV_VERSION})
-            if (libuv_FOUND)
-                if(BUILD_UVW_SHARED_LIB)
-                    add_library(uv::uv-shared ALIAS PkgConfig::libuv)
-                else()
-                    add_library(uv::uv-static ALIAS PkgConfig::libuv)
-                endif()
-                set(UVW_FETCH_LIBUV_DEFAULT OFF)
-                message(STATUS "libuv ${libuv_VERSION} found via pkg-config")
-            endif(libuv_FOUND)
-        endif(PkgConfig_FOUND)
-    endif(UVW_FIND_LIBUV)
-
-    option(UVW_FETCH_LIBUV "Fetch the libuv repo using CMake FetchContent facility" ${UVW_FETCH_LIBUV_DEFAULT})
-
     fetch_libuv()
 endfunction()
 

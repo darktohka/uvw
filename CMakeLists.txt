@@ -78,61 +78,6 @@ endif()
 # Required minimal libuv version
 set(UVW_LIBUV_VERSION 1.49.0)
 
-function(fetch_libuv)
-    if (UVW_FETCH_LIBUV)
-        include(FetchContent)
-
-        FetchContent_Declare(
-            libuv
-            GIT_REPOSITORY https://github.com/libuv/libuv.git
-            GIT_TAG "v${UVW_LIBUV_VERSION}"
-            GIT_SHALLOW 1
-        )
-
-        FetchContent_GetProperties(libuv)
-
-        if(NOT libuv_POPULATED)
-            FetchContent_Populate(libuv)
-            add_subdirectory(${libuv_SOURCE_DIR} ${libuv_BINARY_DIR} EXCLUDE_FROM_ALL)
-        endif()
-
-        if(UVW_BUILD_SHARED_LIB)
-            add_library(uv::uv-shared ALIAS uv)
-            set_target_properties(uv PROPERTIES POSITION_INDEPENDENT_CODE 1)
-        else()
-            add_library(uv::uv-static ALIAS uv_a)
-            set_target_properties(uv_a PROPERTIES POSITION_INDEPENDENT_CODE 1)
-        endif()
-    endif(UVW_FETCH_LIBUV)
-endfunction()
-
-function(use_libuv)
-    set(UVW_FETCH_LIBUV_DEFAULT ON)
-
-    if (UVW_FIND_LIBUV)
-        find_package(libuv ${LIBUV_VERSION} QUIET)
-        if (libuv_FOUND)
-            add_library(uv::uv-shared ALIAS uv)
-            set(UVW_FETCH_LIBUV_DEFAULT OFF)
-            message(STATUS "libuv ${libuv_VERSION} found via cmake")
-        else(libuv_FOUND)
-            find_package(PkgConfig QUIET)
-            if (PkgConfig_FOUND)
-                pkg_check_modules(libuv IMPORTED_TARGET libuv>=${LIBUV_VERSION})
-                if (libuv_FOUND)
-                    add_library(uv::uv-shared ALIAS PkgConfig::libuv)
-                    set(UVW_FETCH_LIBUV_DEFAULT OFF)
-                    message(STATUS "libuv ${libuv_VERSION} found via pkg-config")
-                endif(libuv_FOUND)
-            endif(PkgConfig_FOUND)
-        endif(libuv_FOUND)
-    endif(UVW_FIND_LIBUV)
-
-    option(UVW_FETCH_LIBUV "Fetch the libuv repo using CMake FetchContent facility" ${UVW_FETCH_LIBUV_DEFAULT})
-
-    fetch_libuv()
-endfunction()
-
 #
 # Add uvw target
 #
@@ -140,8 +85,6 @@ endfunction()
 include(GNUInstallDirs)
 
 if(UVW_BUILD_LIBS)
-    use_libuv()
-
     add_subdirectory(src)
     file(GLOB HEADERS src/uvw/*.h src/uvw/*.hpp)
 else()
@@ -222,6 +165,8 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+set(libuv_SOURCE_DIR /home/runner/work/Astron/Astron/libraries/libuv)
+
 if(UVW_FETCH_LIBUV AND UVW_BUILD_LIBS)
     # libuv is only fetched when both above conditions are true
     install(DIRECTORY ${libuv_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uvw/uv/include)
@@ -240,10 +185,6 @@ option(UVW_BUILD_TESTING "Enable testing with ctest." OFF)
 
 if(UVW_BUILD_TESTING)
     option(UVW_FIND_GTEST_PACKAGE "Enable finding gtest package." OFF)
-
-    if (NOT UVW_BUILD_LIBS)
-        use_libuv()
-    endif()
 
     enable_testing()
     add_subdirectory(test)
